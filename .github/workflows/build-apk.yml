@@ -1,0 +1,54 @@
+name: Build Birlik Teknik Mudur APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Projeyi indir
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK hazirla
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle 8.9 kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Android 35 kur
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: ZIP dosyasini ac
+        run: |
+          mkdir extracted
+          unzip -q birlik-teknik-mudur-proje.zip -d extracted
+
+      - name: APK derle
+        working-directory: extracted/Birlik-Teknik-Mudur-Android-v0.2-cloudbuild
+        run: gradle --no-daemon assembleDebug
+
+      - name: APK adini duzelt
+        run: |
+          cp extracted/Birlik-Teknik-Mudur-Android-v0.2-cloudbuild/app/build/outputs/apk/debug/app-debug.apk Birlik-Teknik-Mudur.apk
+
+      - name: APK dosyasini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Birlik-Teknik-Mudur-APK
+          path: Birlik-Teknik-Mudur.apk
+          if-no-files-found: error
+          
